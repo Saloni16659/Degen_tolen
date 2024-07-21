@@ -1,19 +1,10 @@
-/*Your task is to create a ERC20 token and deploy it on the Avalanche network for Degen Gaming. The smart contract should have the following functionality:
-
-Minting new tokens: The platform should be able to create new tokens and distribute them to players as rewards. Only the owner can mint tokens.
-Transferring tokens: Players should be able to transfer their tokens to others.
-Redeeming tokens: Players should be able to redeem their tokens for items in the in-game store.
-Checking token balance: Players should be able to check their token balance at any time.
-Burning tokens: Anyone should be able to burn tokens, that they own, that are no longer needed.*/
-
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract DegenToken is ERC20, Ownable(msg.sender) {
+contract DegenToken is ERC20, Ownable {
     constructor() ERC20("Degen", "DGN") {}
 
     // Store item structure
@@ -24,6 +15,9 @@ contract DegenToken is ERC20, Ownable(msg.sender) {
 
     // Store items list
     StoreItem[] public storeItems;
+
+    // Mapping to track which player owns which items
+    mapping(address => mapping(uint256 => uint256)) public playerItems;
 
     // Add store items (onlyOwner)
     function addStoreItem(string memory itemName, uint256 price) external onlyOwner {
@@ -50,7 +44,13 @@ contract DegenToken is ERC20, Ownable(msg.sender) {
         require(balanceOf(msg.sender) >= price, "Not enough Degen Tokens to redeem this item");
 
         _burn(msg.sender, price);
+        playerItems[msg.sender][itemIndex] += 1;
         emit RedeemItem(msg.sender, storeItems[itemIndex].itemName, price);
+    }
+
+    // Get the number of a specific item owned by a player
+    function getPlayerItem(address player, uint256 itemIndex) public view returns (uint256) {
+        return playerItems[player][itemIndex];
     }
 
     // Anyone can burn their own tokens that are no longer needed.
